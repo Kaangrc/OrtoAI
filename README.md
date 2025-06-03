@@ -31,18 +31,52 @@
 
 ```plaintext
 lib/
-├── main.dart
-├── models/         # JSON veri modelleri (User, Patient, File vs.)
-├── services/       # API ve servis işlemleri (Dio servisleri)
-├── utils/          # Sabitler, tema, helper fonksiyonlar
-├── views/
-│   ├── DoctorViews/    # Doktorlara özel sayfalar
-│   ├── TenantViews/    # Klinik yönetici sayfaları
-│   └── common/         # Ortak widgetlar
-├── theme/          # Açık/Koyu tema desteği
-├── widgets/        # Custom widgetlar
-├── routing/        # Giriş kontrolü ve yönlendirme
-└── config/         # URL, base config ayarları
+├── main.dart                 # Uygulamanın ana giriş noktası
+│
+├── models/                   # Veri modelleri
+│   ├── doctor.dart          # Doktor veri modeli
+│   ├── tenant.dart          # Klinik yöneticisi veri modeli
+│   ├── patientmodel.dart    # Hasta veri modeli
+│   ├── file_model.dart      # Dosya veri modeli
+│   ├── form_model.dart      # Form veri modeli
+│   └── mr_model.dart        # MR görüntüleme veri modeli
+│
+├── services/                # API ve iş mantığı servisleri
+│   ├── tenant_service.dart  # Klinik yöneticisi servisleri
+│   ├── doctor_service.dart  # Doktor servisleri
+│   ├── patient_service.dart # Hasta servisleri
+│   ├── file_service.dart    # Dosya servisleri
+│   ├── form_service.dart    # Form servisleri
+│   └── mr_service.dart      # MR görüntüleme servisleri
+│
+├── utils/                   # Yardımcı fonksiyonlar
+│   └── api_client.dart      # API istekleri için client
+│
+├── views/                   # Kullanıcı arayüzü bileşenleri
+│   ├── login_page.dart      # Giriş sayfası
+│   ├── register_page.dart   # Kayıt sayfası
+│   ├── promotion_page.dart  # Tanıtım sayfası
+│   ├── splash_screen.dart   # Açılış ekranı
+│   │
+│   ├── DoctorViews/        # Doktor arayüzleri
+│   │   ├── dhomepage.dart           # Doktor ana sayfa
+│   │   ├── dprofile_page.dart       # Doktor profil sayfası
+│   │   ├── dteam_page.dart          # Takım yönetimi
+│   │   ├── dfile_page.dart          # Dosya yönetimi
+│   │   ├── dformpage.dart           # Form yönetimi
+│   │   ├── dpatient_page.dart       # Hasta listesi
+│   │   ├── dpatient_detail_page.dart # Hasta detay sayfası
+│   │   └── mr_analiz_page.dart      # MR analiz sayfası
+│   │
+│   └── TenantViews/        # Klinik yöneticisi arayüzleri
+│       ├── thomepage.dart           # Tenant ana sayfa
+│       ├── tprofile_page.dart       # Tenant profil sayfası
+│       └── tteam_page.dart          # Tenant takım yönetimi
+│
+└── theme/                   # Tema yönetimi
+    ├── light_mode.dart      # Açık tema
+    ├── dark_mode.dart       # Koyu tema
+    └── theme_provider.dart  # Tema yönetimi sağlayıcısı
 ```
 ## 🧪 MR Segmentasyon Özelliği
 
