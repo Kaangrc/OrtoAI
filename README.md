@@ -43,7 +43,7 @@ lib/
 ├── widgets/        # Custom widgetlar
 ├── routing/        # Giriş kontrolü ve yönlendirme
 └── config/         # URL, base config ayarları
-
+```
 ## 🧪 MR Segmentasyon Özelliği
 
 - Kullanıcılar, hasta profiline MR görüntüsü yükler.
