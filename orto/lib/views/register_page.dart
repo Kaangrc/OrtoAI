@@ -58,11 +58,41 @@ class _RegisterPageState extends State<RegisterPage>
     super.dispose();
   }
 
+  bool _validateCurrentStep() {
+    switch (_activeStep) {
+      case 0:
+        return _nameController.text.isNotEmpty &&
+            _addressController.text.isNotEmpty;
+      case 1:
+        return _phoneController.text.length >= 10 &&
+            _emailController.text.contains('@');
+      case 2:
+        return _passwordController.text.length >= 6 &&
+            _passwordController.text == _confirmPasswordController.text;
+      default:
+        return false;
+    }
+  }
+
   void _handleNext() {
-    if (_activeStep < _steps.length - 1) {
-      setState(() {
-        _activeStep++;
-      });
+    if (_validateCurrentStep()) {
+      if (_activeStep < _steps.length - 1) {
+        setState(() {
+          _activeStep++;
+        });
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lütfen tüm alanları doldurun'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
     }
   }
 
@@ -80,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage>
       return;
     }
 
-    if (_formKey.currentState!.validate()) {
+    if (_validateCurrentStep()) {
       try {
         final response =
             await TenantService(dioClient: _dioClient, secureStorage: _storage)
@@ -101,11 +131,12 @@ class _RegisterPageState extends State<RegisterPage>
             SnackBar(
               content: const Text(
                   'Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...'),
-              backgroundColor: Colors.teal,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              margin: const EdgeInsets.all(16),
             ),
           );
 
@@ -114,13 +145,29 @@ class _RegisterPageState extends State<RegisterPage>
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Kayıt başarısız')),
+            SnackBar(
+              content: Text(response['message'] ?? 'Kayıt başarısız'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
           );
         }
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kayıt sırasında bir hata oluştu')),
+          SnackBar(
+            content: const Text('Kayıt sırasında bir hata oluştu'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
         );
       }
     }
@@ -144,41 +191,41 @@ class _RegisterPageState extends State<RegisterPage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildAnimatedContainer([
-          const Text('Kurum Adı', style: TextStyle(fontSize: 14)),
+          Text(
+            'Kurum Adı',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _nameController,
             decoration: InputDecoration(
               hintText: 'Kurum Adı',
-              prefixIcon: const Icon(Icons.business),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
+              prefixIcon: Icon(
+                Icons.business,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
-            validator: (value) =>
-                value?.isEmpty ?? true ? 'Kurum adı gerekli' : null,
           ),
           const SizedBox(height: 24),
-          const Text('Adres', style: TextStyle(fontSize: 14)),
+          Text(
+            'Adres',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _addressController,
             decoration: InputDecoration(
               hintText: 'Adres',
-              prefixIcon: const Icon(Icons.location_on),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
+              prefixIcon: Icon(
+                Icons.location_on,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             maxLines: 2,
-            validator: (value) =>
-                value?.isEmpty ?? true ? 'Adres gerekli' : null,
           ),
         ]),
       ],
@@ -190,49 +237,42 @@ class _RegisterPageState extends State<RegisterPage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildAnimatedContainer([
-          const Text('Telefon Numarası', style: TextStyle(fontSize: 14)),
+          Text(
+            'Telefon Numarası',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _phoneController,
             decoration: InputDecoration(
               hintText: '5XX XXX XX XX',
-              prefixIcon: const Icon(Icons.phone),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
+              prefixIcon: Icon(
+                Icons.phone,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             keyboardType: TextInputType.phone,
-            validator: (value) {
-              if (value?.isEmpty ?? true) return 'Telefon gerekli';
-              if (value!.length < 10)
-                return 'Geçerli bir telefon numarası giriniz';
-              return null;
-            },
           ),
           const SizedBox(height: 24),
-          const Text('E-posta', style: TextStyle(fontSize: 14)),
+          Text(
+            'E-posta',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _emailController,
             decoration: InputDecoration(
               hintText: 'ornek@sirket.com',
-              prefixIcon: const Icon(Icons.email),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
+              prefixIcon: Icon(
+                Icons.email,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
             keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value?.isEmpty ?? true) return 'E-posta gerekli';
-              if (!value!.contains('@')) return 'Geçerli bir e-posta giriniz';
-              return null;
-            },
           ),
         ]),
       ],
@@ -244,93 +284,104 @@ class _RegisterPageState extends State<RegisterPage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildAnimatedContainer([
-          const Text('Şifre', style: TextStyle(fontSize: 14)),
+          Text(
+            'Şifre',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _passwordController,
+            obscureText: !_showPassword,
             decoration: InputDecoration(
-              hintText: '********',
-              prefixIcon: const Icon(Icons.lock),
+              hintText: 'Şifre',
+              prefixIcon: Icon(
+                Icons.lock,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
-                    _showPassword ? Icons.visibility_off : Icons.visibility),
+                  _showPassword ? Icons.visibility_off : Icons.visibility,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 onPressed: () {
                   setState(() {
                     _showPassword = !_showPassword;
                   });
                 },
               ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
-              ),
             ),
-            obscureText: !_showPassword,
-            validator: (value) {
-              if (value?.isEmpty ?? true) return 'Şifre gerekli';
-              if (value!.length < 6) return 'Şifre en az 6 karakter olmalı';
-              return null;
-            },
           ),
           const SizedBox(height: 24),
-          const Text('Şifre Tekrar', style: TextStyle(fontSize: 14)),
+          Text(
+            'Şifre Tekrar',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _confirmPasswordController,
+            obscureText: !_showPasswordConfirm,
             decoration: InputDecoration(
-              hintText: '********',
-              prefixIcon: const Icon(Icons.lock),
+              hintText: 'Şifre Tekrar',
+              prefixIcon: Icon(
+                Icons.lock_outline,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               suffixIcon: IconButton(
-                icon: Icon(_showPasswordConfirm
-                    ? Icons.visibility_off
-                    : Icons.visibility),
+                icon: Icon(
+                  _showPasswordConfirm
+                      ? Icons.visibility_off
+                      : Icons.visibility,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 onPressed: () {
                   setState(() {
                     _showPasswordConfirm = !_showPasswordConfirm;
                   });
                 },
               ),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
-              ),
             ),
-            obscureText: !_showPasswordConfirm,
-            validator: (value) {
-              if (value != _passwordController.text) {
-                return 'Şifreler eşleşmiyor';
-              }
-              return null;
-            },
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedPlanType,
-            decoration: InputDecoration(
-              labelText: 'Plan Tipi',
-              prefixIcon: const Icon(Icons.card_membership),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.teal.shade300),
+          const SizedBox(height: 24),
+          Text(
+            'Plan Tipi',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline,
               ),
             ),
-            items: const [
-              DropdownMenuItem(value: 'Basic', child: Text('Temel Plan')),
-              DropdownMenuItem(value: 'Premium', child: Text('Premium Plan')),
-              DropdownMenuItem(
-                  value: 'Enterprise', child: Text('Kurumsal Plan')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _selectedPlanType = value!;
-              });
-            },
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedPlanType,
+                isExpanded: true,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                borderRadius: BorderRadius.circular(12),
+                items: ['Basic', 'Premium', 'Enterprise'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  if (newValue != null) {
+                    setState(() {
+                      _selectedPlanType = newValue;
+                    });
+                  }
+                },
+              ),
+            ),
           ),
         ]),
       ],
@@ -338,16 +389,24 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   Widget _buildAnimatedContainer(List<Widget> children) {
-    return AnimatedOpacity(
-      opacity: 1.0,
-      duration: const Duration(milliseconds: 500),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: children,
-        ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
       ),
     );
   }
@@ -355,185 +414,81 @@ class _RegisterPageState extends State<RegisterPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.teal.shade700,
-              Colors.teal.shade500,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
+      appBar: AppBar(
+        title: const Text('Kayıt Ol'),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 24),
+                Stepper(
+                  currentStep: _activeStep,
+                  onStepContinue: _handleNext,
+                  onStepCancel: _handleBack,
+                  controlsBuilder: (context, details) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Row(
                         children: [
-                          Card(
-                            elevation: 8,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                          if (_activeStep > 0)
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: details.onStepCancel,
+                                style: OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                child: const Text('Geri'),
+                              ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  // Gradient Title
-                                  ShaderMask(
-                                    shaderCallback: (Rect bounds) {
-                                      return LinearGradient(
-                                        colors: [
-                                          Colors.teal.shade500,
-                                          Colors.blue.shade400,
-                                        ],
-                                      ).createShader(bounds);
-                                    },
-                                    child: const Text(
-                                      'Kurumsal Kayıt',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Stepper
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(
-                                      _steps.length,
-                                      (index) => Expanded(
-                                        child: Column(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 16,
-                                              backgroundColor:
-                                                  _activeStep >= index
-                                                      ? Colors.teal.shade500
-                                                      : Colors.grey.shade300,
-                                              child: _activeStep > index
-                                                  ? const Icon(Icons.check,
-                                                      color: Colors.white,
-                                                      size: 16)
-                                                  : Text(
-                                                      '${index + 1}',
-                                                      style: TextStyle(
-                                                        color:
-                                                            _activeStep >= index
-                                                                ? Colors.white
-                                                                : Colors.grey
-                                                                    .shade700,
-                                                      ),
-                                                    ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              _steps[index],
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: _activeStep >= index
-                                                    ? Colors.teal.shade500
-                                                    : Colors.grey.shade600,
-                                                fontWeight: _activeStep == index
-                                                    ? FontWeight.bold
-                                                    : FontWeight.normal,
-                                              ),
-                                            ),
-                                            if (index < _steps.length - 1)
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 8),
-                                                child: Container(
-                                                  height: 1,
-                                                  color: _activeStep > index
-                                                      ? Colors.teal.shade500
-                                                      : Colors.grey.shade300,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Step Content
-                                  _buildStepContent(),
-
-                                  // Buttons
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 24),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        OutlinedButton(
-                                          onPressed: _activeStep == 0
-                                              ? null
-                                              : _handleBack,
-                                          style: OutlinedButton.styleFrom(
-                                            side: BorderSide(
-                                                color: Colors.teal.shade500),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: const Text('Geri'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: _handleSubmit,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                Colors.teal.shade500,
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: Text(
-                                              _activeStep == _steps.length - 1
-                                                  ? 'Kaydı Tamamla'
-                                                  : 'İleri'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                          if (_activeStep > 0) const SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: details.onStepContinue,
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              child: Text(
+                                _activeStep == _steps.length - 1
+                                    ? 'Kayıt Ol'
+                                    : 'İleri',
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          TextButton(
-                            onPressed: () => Navigator.pushReplacementNamed(
-                                context, '/login'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('Zaten üye misin? Giriş Yap'),
-                          ),
                         ],
                       ),
+                    );
+                  },
+                  steps: List.generate(
+                    _steps.length,
+                    (index) => Step(
+                      title: Text(
+                        _steps[index],
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      content: _buildStepContent(),
+                      isActive: _activeStep >= index,
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

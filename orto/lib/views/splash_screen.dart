@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Image.asset('assets/images/Computer.png'),
             //Burada bir yazı ekliyoruz
             const Text(
-              'Welcome to MyApp',
+              'Welcome to OrToAI',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
