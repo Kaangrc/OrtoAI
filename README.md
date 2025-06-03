@@ -28,6 +28,8 @@
 - `custom_clippers`, `animated_text_kit`: UI iyileştirmeleri
 
 ## 🗂️ Proje Yapısı
+
+```plaintext
 lib/
 ├── main.dart
 ├── models/         # JSON veri modelleri (User, Patient, File vs.)
