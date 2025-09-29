@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ortopedi_ai/utils/api_client.dart';
 import '../services/tenant_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+// import kaldırıldı: login sayfasına named route ile gidiliyor
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -13,7 +14,6 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _formKey = GlobalKey<FormState>();
 
   // DioClient ve storage tanımlamaları
   final _storage = const FlutterSecureStorage();
@@ -31,6 +31,7 @@ class _RegisterPageState extends State<RegisterPage>
   bool _showPassword = false;
   bool _showPasswordConfirm = false;
   int _activeStep = 0;
+  bool _isSubmitting = false;
 
   // Steps from React component
   final List<String> _steps = [
@@ -111,6 +112,10 @@ class _RegisterPageState extends State<RegisterPage>
     }
 
     if (_validateCurrentStep()) {
+      if (_isSubmitting) return;
+      setState(() {
+        _isSubmitting = true;
+      });
       try {
         final response =
             await TenantService(dioClient: _dioClient, secureStorage: _storage)
@@ -130,8 +135,8 @@ class _RegisterPageState extends State<RegisterPage>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                  'Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz...'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
+                  'Kayıt başarılı! Kurum girişi ekranına yönlendiriliyorsunuz...'),
+              backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -141,7 +146,8 @@ class _RegisterPageState extends State<RegisterPage>
           );
 
           Future.delayed(const Duration(seconds: 1), () {
-            Navigator.pushReplacementNamed(context, '/login');
+            Navigator.pushNamedAndRemoveUntil(
+                context, '/login', (route) => false);
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +175,12 @@ class _RegisterPageState extends State<RegisterPage>
             margin: const EdgeInsets.all(16),
           ),
         );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
       }
     }
   }
@@ -454,7 +466,14 @@ class _RegisterPageState extends State<RegisterPage>
                           if (_activeStep > 0) const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: details.onStepContinue,
+                              onPressed: () {
+                                if (_activeStep == _steps.length - 1) {
+                                  if (_isSubmitting) return;
+                                  _handleSubmit();
+                                } else {
+                                  _handleNext();
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),

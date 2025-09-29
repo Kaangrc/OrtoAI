@@ -1,3 +1,5 @@
+import 'option_model.dart';
+
 class FormModel {
   final String id;
   final String name;
@@ -10,6 +12,7 @@ class FormModel {
   final String? createdBy;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? repeat;
 
   FormModel({
     required this.id,
@@ -23,6 +26,7 @@ class FormModel {
     this.createdBy,
     this.createdAt,
     this.updatedAt,
+    this.repeat,
   });
 
   factory FormModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +56,7 @@ class FormModel {
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
       updatedAt:
           json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      repeat: json['repeat'],
     );
   }
 
@@ -68,13 +73,14 @@ class FormModel {
       'created_by': createdBy,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'repeat': repeat,
     };
   }
 }
 
 class Question {
   final String question;
-  final List<String>? options;
+  final List<OptionModel>? options;
   final String type;
   final int level;
 
@@ -88,8 +94,11 @@ class Question {
   factory Question.fromJson(Map<String, dynamic> json) {
     return Question(
       question: json['question'],
-      options:
-          json['options'] != null ? List<String>.from(json['options']) : null,
+      options: json['options'] != null
+          ? (json['options'] as List)
+              .map((option) => OptionModel.fromJson(option))
+              .toList()
+          : null,
       type: json['type'],
       level: json['level'],
     );
@@ -98,7 +107,7 @@ class Question {
   Map<String, dynamic> toJson() {
     return {
       'question': question,
-      'options': options,
+      'options': options?.map((option) => option.toJson()).toList(),
       'type': type,
       'level': level,
     };

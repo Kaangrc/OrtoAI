@@ -16,7 +16,6 @@ class _DProfilePageState extends State<DProfilePage> {
   late final DioClient _dioClient;
   late final DoctorService _doctorService;
   bool _isLoading = false;
-  Map<String, dynamic>? _doctorInfo;
 
   // Form controllers
   final _nameController = TextEditingController();
@@ -55,7 +54,6 @@ class _DProfilePageState extends State<DProfilePage> {
 
       if (doctorInfo != null) {
         setState(() {
-          _doctorInfo = doctorInfo;
           // Form alanlarını doldur
           _nameController.text = doctorInfo['name'] ?? '';
           _surnameController.text = doctorInfo['surname'] ?? '';
@@ -144,14 +142,6 @@ class _DProfilePageState extends State<DProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        automaticallyImplyLeading: false,
-        title: const Text('Profil'),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

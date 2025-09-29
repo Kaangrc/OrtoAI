@@ -3,6 +3,9 @@ import 'package:ortopedi_ai/utils/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:ortopedi_ai/views/DoctorViews/dfile_page.dart';
 import 'package:ortopedi_ai/views/DoctorViews/dpatient_page.dart';
+import 'package:ortopedi_ai/views/DoctorViews/dprofile_page.dart';
+import 'package:ortopedi_ai/views/DoctorViews/dteam_page.dart';
+import 'package:ortopedi_ai/views/promotion_page.dart';
 import 'package:ortopedi_ai/services/doctor_service.dart';
 import 'package:ortopedi_ai/services/patient_service.dart';
 import 'package:ortopedi_ai/services/file_service.dart';
@@ -17,6 +20,7 @@ class DHomePage extends StatefulWidget {
 }
 
 class _DHomePageState extends State<DHomePage> {
+  int _currentIndex = 0;
   final _storage = const FlutterSecureStorage();
   late final DoctorService _doctorService;
   late final PatientService _patientService;
@@ -94,12 +98,40 @@ class _DHomePageState extends State<DHomePage> {
   }
 
   void _handleLogout(BuildContext context) async {
-    final storage = const FlutterSecureStorage();
-    final dioClient = DioClient(storage: storage);
-    dioClient.clearToken();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: const Text('Uygulamadan çıkmak istediğinizden emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
+    );
 
-    if (context.mounted) {
-      Navigator.pushReplacementNamed(context, '/promotion');
+    if (confirmed == true) {
+      final storage = const FlutterSecureStorage();
+      final dioClient = DioClient(storage: storage);
+      await dioClient.clearToken();
+
+      if (context.mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const PromotionPage()),
+          (route) => false,
+        );
+      }
     }
   }
 
@@ -146,178 +178,161 @@ class _DHomePageState extends State<DHomePage> {
     );
   }
 
-  Widget _buildMenuCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 32,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+  List<Widget> _buildPages() {
+    return [
+      _buildHomePage(),
+      const DPatientPage(),
+      const DFilePage(),
+      const DTeamPage(),
+      const DProfilePage(),
+    ];
+  }
+
+  Widget _buildHomePage() {
+    return _isLoading
+        ? Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          )
+        : RefreshIndicator(
+            onRefresh: _loadStatistics,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Genel İstatistikler',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    children: [
+                      _buildStatCard(
+                        'Alt Doktorlar',
+                        _statistics['subDoctors'] ?? 0,
+                        Icons.people,
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                      _buildStatCard(
+                        'Toplam Hasta',
+                        _statistics['totalPatients'] ?? 0,
+                        Icons.person,
+                        Theme.of(context).colorScheme.secondary,
+                      ),
+                      _buildStatCard(
+                        'Toplam Dosya',
+                        _statistics['totalFiles'] ?? 0,
+                        Icons.folder,
+                        Theme.of(context).colorScheme.tertiary,
+                      ),
+                      _buildStatCard(
+                        'Toplam Form',
+                        _statistics['totalForms'] ?? 0,
+                        Icons.description,
+                        Theme.of(context).colorScheme.error,
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
+          );
+  }
+
+  void _showAddDoctorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Doktor Ekle'),
+        content: const Text('Doktor ekleme özelliği yakında eklenecek.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
           ),
-        ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final pages = _buildPages();
+    final titles = [
+      'Ana Sayfa',
+      'Hastalar',
+      'Dosyalar',
+      'Ekip Yönetimi',
+      'Profil'
+    ];
+
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Doktor Ana Sayfası'),
+        title: Text(titles[_currentIndex]),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/doctor/profile');
-            },
-            tooltip: 'Profil',
+          if (_currentIndex == 0) // Ana sayfa için logout butonu
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () => _handleLogout(context),
+              tooltip: 'Çıkış Yap',
+            ),
+        ],
+      ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: pages,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor:
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: 'Ana Sayfa',
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _handleLogout(context),
-            tooltip: 'Çıkış Yap',
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
+            label: 'Hastalar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.folder_outlined),
+            activeIcon: Icon(Icons.folder),
+            label: 'Dosyalar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.groups_outlined),
+            activeIcon: Icon(Icons.groups),
+            label: 'Ekip',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profil',
           ),
         ],
       ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadStatistics,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Genel İstatistikler',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
-                    ),
-                    const SizedBox(height: 24),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      children: [
-                        _buildStatCard(
-                          'Alt Doktorlar',
-                          _statistics['subDoctors'] ?? 0,
-                          Icons.people,
-                          Theme.of(context).colorScheme.primary,
-                        ),
-                        _buildStatCard(
-                          'Toplam Hasta',
-                          _statistics['totalPatients'] ?? 0,
-                          Icons.person,
-                          Theme.of(context).colorScheme.secondary,
-                        ),
-                        _buildStatCard(
-                          'Toplam Dosya',
-                          _statistics['totalFiles'] ?? 0,
-                          Icons.folder,
-                          Theme.of(context).colorScheme.tertiary,
-                        ),
-                        _buildStatCard(
-                          'Toplam Form',
-                          _statistics['totalForms'] ?? 0,
-                          Icons.description,
-                          Theme.of(context).colorScheme.error,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    Text(
-                      'Hızlı Erişim',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                              ),
-                    ),
-                    const SizedBox(height: 24),
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      children: [
-                        _buildMenuCard(
-                          context,
-                          'Ekip Yönetimi',
-                          Icons.people,
-                          () => Navigator.pushNamed(context, '/doctor/team'),
-                        ),
-                        _buildMenuCard(
-                          context,
-                          'Dosyalar',
-                          Icons.folder,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const DFilePage()),
-                          ),
-                        ),
-                        _buildMenuCard(
-                          context,
-                          'Hastalar',
-                          Icons.person_outline,
-                          () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const DPatientPage()),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
     );
   }
 }

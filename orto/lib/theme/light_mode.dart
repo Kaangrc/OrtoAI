@@ -138,14 +138,6 @@ ThemeData lightMode = ThemeData(
     color: Color(0xFF1A1A1A),
     size: 24,
   ),
-  cardTheme: CardTheme(
-    color: const Color(0xFFFFFFFF),
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  ),
   snackBarTheme: SnackBarThemeData(
     backgroundColor: const Color(0xFF424242),
     contentTextStyle: const TextStyle(color: Colors.white),

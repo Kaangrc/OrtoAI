@@ -104,6 +104,7 @@ class FormService {
         'type': data['type'],
         'file_id': data['file_id'],
         'level': 10, // Sabit level değeri
+        'repeat': data['repeat'], // Repetition time ekle
       };
 
       print('Form verisi: $formData'); // Debug için

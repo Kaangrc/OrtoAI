@@ -3,6 +3,7 @@ import 'package:ortopedi_ai/services/tenant_service.dart';
 import 'package:ortopedi_ai/services/doctor_service.dart';
 import 'package:ortopedi_ai/utils/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:ortopedi_ai/views/TenantViews/tenant_doctor_stepper.dart';
 
 class TTeamPage extends StatefulWidget {
   const TTeamPage({super.key});
@@ -118,8 +119,15 @@ class _TTeamPageState extends State<TTeamPage> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content:
-                      Text(response['message'] ?? 'Doktor başarıyla eklendi')),
+                content:
+                    Text(response['message'] ?? 'Doktor başarıyla eklendi'),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
             );
             // Form alanlarını temizle
             _nameController.clear();
@@ -137,7 +145,15 @@ class _TTeamPageState extends State<TTeamPage> {
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(response['error'] ?? 'Doktor eklenemedi')),
+              SnackBar(
+                content: Text(response['error'] ?? 'Doktor eklenemedi'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
             );
           }
         }
@@ -161,146 +177,14 @@ class _TTeamPageState extends State<TTeamPage> {
   }
 
   void _showAddDoctorDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yeni Doktor Ekle'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ad',
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen adı girin';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _surnameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Soyad',
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen soyadı girin';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'E-posta',
-                    prefixIcon: Icon(Icons.email),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen e-posta adresini girin';
-                    }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                        .hasMatch(value)) {
-                      return 'Geçerli bir e-posta adresi girin';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _specializationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Uzmanlık Alanı',
-                    prefixIcon: Icon(Icons.medical_services),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen uzmanlık alanını girin';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _phoneNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefon Numarası',
-                    prefixIcon: Icon(Icons.phone),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen telefon numarasını girin';
-                    }
-                    if (!RegExp(r'^[0-9]{10,11}$').hasMatch(value)) {
-                      return 'Geçerli bir telefon numarası girin';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Şifre',
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen şifre girin';
-                    }
-                    if (value.length < 6) {
-                      return 'Şifre en az 6 karakter olmalıdır';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordConfirmationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Şifre Tekrar',
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Lütfen şifre tekrarını girin';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Şifreler eşleşmiyor';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TenantDoctorStepper(
+          onDoctorAdded: () async {
+            await _loadDoctors();
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: _isLoading ? null : _handleAddDoctor,
-            child: _isLoading
-                ? const CircularProgressIndicator()
-                : const Text('Ekle'),
-          ),
-        ],
       ),
     );
   }
@@ -376,10 +260,10 @@ class _TTeamPageState extends State<TTeamPage> {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddDoctorDialog,
-        child: const Icon(Icons.add),
-        tooltip: 'Doktor Ekle',
+        icon: const Icon(Icons.person_add_alt_1),
+        label: const Text('Doktor Ekle'),
       ),
     );
   }

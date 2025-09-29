@@ -109,113 +109,150 @@ class _TProfilePageState extends State<TProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil Bilgileri'),
+        centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: CircularProgressIndicator(color: colorScheme.primary),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Kurum Adı',
-                        prefixIcon: Icon(Icons.business),
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen kurum adını girin';
-                        }
-                        return null;
-                      },
+                    Text(
+                      'Kurum Bilgileri',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'Adres',
-                        prefixIcon: Icon(Icons.location_on),
-                        border: OutlineInputBorder(),
+                    Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      maxLines: 2,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen adres girin';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Telefon',
-                        prefixIcon: Icon(Icons.phone),
-                        border: OutlineInputBorder(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                labelText: 'Kurum Adı',
+                                prefixIcon: const Icon(Icons.business),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Lütfen kurum adını girin';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _addressController,
+                              decoration: InputDecoration(
+                                labelText: 'Adres',
+                                prefixIcon: const Icon(Icons.location_on),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              maxLines: 2,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Lütfen adres girin';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _phoneController,
+                              decoration: InputDecoration(
+                                labelText: 'Telefon',
+                                prefixIcon: const Icon(Icons.phone),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              keyboardType: TextInputType.phone,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Lütfen telefon numarası girin';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: InputDecoration(
+                                labelText: 'E-posta',
+                                prefixIcon: const Icon(Icons.email),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Lütfen e-posta adresi girin';
+                                }
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                    .hasMatch(value)) {
+                                  return 'Geçerli bir e-posta adresi girin';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              value: _selectedPlanType,
+                              decoration: InputDecoration(
+                                labelText: 'Plan Tipi',
+                                prefixIcon: const Icon(Icons.card_membership),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'basic', child: Text('Temel Plan')),
+                                DropdownMenuItem(
+                                    value: 'premium',
+                                    child: Text('Premium Plan')),
+                                DropdownMenuItem(
+                                    value: 'enterprise',
+                                    child: Text('Kurumsal Plan')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedPlanType = value!;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen telefon numarası girin';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'E-posta',
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Lütfen e-posta adresi girin';
-                        }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(value)) {
-                          return 'Geçerli bir e-posta adresi girin';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedPlanType,
-                      decoration: const InputDecoration(
-                        labelText: 'Plan Tipi',
-                        prefixIcon: Icon(Icons.card_membership),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'basic', child: Text('Temel Plan')),
-                        DropdownMenuItem(
-                            value: 'premium', child: Text('Premium Plan')),
-                        DropdownMenuItem(
-                            value: 'enterprise', child: Text('Kurumsal Plan')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedPlanType = value!;
-                        });
-                      },
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _handleUpdate,
-                      child: _isLoading
-                          ? const CircularProgressIndicator()
-                          : const Text('Bilgileri Güncelle'),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _handleUpdate,
+                        icon: const Icon(Icons.save),
+                        label: _isLoading
+                            ? const Text('Kaydediliyor...')
+                            : const Text('Bilgileri Güncelle'),
+                      ),
                     ),
                   ],
                 ),

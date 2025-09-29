@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ortopedi_ai/theme/theme_provider.dart';
-import 'package:provider/provider.dart';
 import 'package:ortopedi_ai/views/DoctorViews/dhomepage.dart';
 import 'package:ortopedi_ai/views/TenantViews/thomepage.dart';
 import 'package:ortopedi_ai/services/doctor_service.dart';
@@ -59,9 +57,10 @@ class _LoginPageState extends State<LoginPage> {
           });
 
           if (response['status'] == 'success') {
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const THomePage()),
+              (route) => false,
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -84,9 +83,10 @@ class _LoginPageState extends State<LoginPage> {
           });
 
           if (response['status'] == 'success') {
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const DHomePage()),
+              (route) => false,
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +124,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Giriş Yap'),
@@ -306,11 +305,11 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    final v = value?.trim() ?? '';
+                    if (v.isEmpty) {
                       return 'Lütfen e-posta adresinizi girin';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                        .hasMatch(value)) {
+                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)) {
                       return 'Geçerli bir e-posta adresi girin';
                     }
                     return null;

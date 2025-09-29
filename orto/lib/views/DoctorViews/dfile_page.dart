@@ -6,6 +6,8 @@ import 'package:ortopedi_ai/services/form_service.dart';
 import 'package:ortopedi_ai/utils/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:ortopedi_ai/views/DoctorViews/dformpage.dart';
+import 'package:ortopedi_ai/views/DoctorViews/form_stepper.dart';
+// import removed: form_fill_stepper.dart (hasta ile doldurma dosya ekranından kaldırıldı)
 
 class DFilePage extends StatefulWidget {
   const DFilePage({super.key});
@@ -20,14 +22,12 @@ class _DFilePageState extends State<DFilePage> {
   late final DioClient _dioClient;
   late final FileService _fileService;
   late final FormService _formService;
+  // Hasta servisine burada ihtiyaç yok
   bool _isLoading = false;
   List<FileModel> _files = [];
 
-  // Form controllers
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  List<Question> _questions = [];
-  String _selectedFormType = 'for patients';
+  // File form controller
+  final _fileNameController = TextEditingController();
 
   @override
   void initState() {
@@ -40,8 +40,7 @@ class _DFilePageState extends State<DFilePage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
+    _fileNameController.dispose();
     super.dispose();
   }
 
@@ -82,7 +81,7 @@ class _DFilePageState extends State<DFilePage> {
 
       try {
         final formData = {
-          'name': _nameController.text.trim(),
+          'name': _fileNameController.text.trim(),
         };
 
         final response = await _fileService.addFile(formData);
@@ -95,7 +94,7 @@ class _DFilePageState extends State<DFilePage> {
                       Text(response['message'] ?? 'Dosya başarıyla eklendi')),
             );
             // Form alanını temizle
-            _nameController.clear();
+            _fileNameController.clear();
             // Dosyaları yeniden yükle
             await _loadFiles();
             // Dialog'u kapat
@@ -127,375 +126,32 @@ class _DFilePageState extends State<DFilePage> {
   }
 
   void _showAddFileDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yeni Dosya Ekle'),
-        content: Form(
-          key: _formKey,
-          child: TextFormField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              labelText: 'Dosya Adı',
-              prefixIcon: Icon(Icons.file_present),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Lütfen dosya adını girin';
-              }
-              return null;
-            },
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _AddFilePage(
+          onFileAdded: () {
+            _loadFiles();
+            Navigator.pop(context);
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: _isLoading ? null : _handleAddFile,
-            child: _isLoading
-                ? const CircularProgressIndicator()
-                : const Text('Ekle'),
-          ),
-        ],
       ),
     );
   }
 
   void _showAddFormDialog(String fileId) {
-    _questions = []; // Reset questions
-    _selectedFormType = 'for patients'; // Reset form type
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Yeni Form Ekle'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Form Adı',
-                      prefixIcon: Icon(Icons.description),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Lütfen form adını girin';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Form Açıklaması',
-                      prefixIcon: Icon(Icons.info),
-                    ),
-                    maxLines: 3,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Lütfen form açıklamasını girin';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _showAddTextQuestionDialog(setState),
-                          icon: const Icon(Icons.text_fields),
-                          label: const Text('Metin Sorusu Ekle'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              _showAddMultipleChoiceQuestionDialog(setState),
-                          icon: const Icon(Icons.check_box),
-                          label: const Text('Çoktan Seçmeli Soru Ekle'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (_questions.isNotEmpty) ...[
-                    const Text('Eklenen Sorular:',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    ..._questions.map((q) => Card(
-                          child: ListTile(
-                            title: Text(q.question),
-                            subtitle: q.options != null
-                                ? Text('Seçenekler: ${q.options!.join(", ")}')
-                                : null,
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () {
-                                setState(() {
-                                  _questions.remove(q);
-                                });
-                              },
-                            ),
-                          ),
-                        )),
-                  ],
-                  const SizedBox(height: 16),
-                  const Text('Form Tipi:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  RadioListTile<String>(
-                    title: const Text('Hastaya Gönder'),
-                    value: 'for patients',
-                    groupValue: _selectedFormType,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedFormType = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Kendin Doldur'),
-                    value: 'for me',
-                    groupValue: _selectedFormType,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedFormType = value!;
-                      });
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: _isLoading ? null : () => _handleAddForm(fileId),
-              child: _isLoading
-                  ? const CircularProgressIndicator()
-                  : const Text('Form Oluştur'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAddTextQuestionDialog(StateSetter setState) {
-    final questionController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Metin Sorusu Ekle'),
-        content: TextFormField(
-          controller: questionController,
-          decoration: const InputDecoration(
-            labelText: 'Soru',
-            prefixIcon: Icon(Icons.question_mark),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Lütfen soruyu girin';
-            }
-            return null;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FormStepper(
+          fileId: fileId,
+          onFormAdded: () {
+            _loadFiles();
+            // Navigator.pop çağrısı FormStepper'da yapılıyor
           },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (questionController.text.isNotEmpty) {
-                setState(() {
-                  _questions.add(Question(
-                    question: questionController.text,
-                    type: 'text',
-                    level: 10, // Sabit level değeri
-                  ));
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Ekle'),
-          ),
-        ],
       ),
     );
-  }
-
-  void _showAddMultipleChoiceQuestionDialog(StateSetter setState) {
-    final questionController = TextEditingController();
-    final optionsController = TextEditingController();
-    List<String> options = [];
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, dialogSetState) => AlertDialog(
-          title: const Text('Çoktan Seçmeli Soru Ekle'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: questionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Soru',
-                    prefixIcon: Icon(Icons.question_mark),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: optionsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Seçenek',
-                    prefixIcon: Icon(Icons.check_box),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    if (optionsController.text.isNotEmpty) {
-                      dialogSetState(() {
-                        options.add(optionsController.text);
-                        optionsController.clear();
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Seçenek Ekle'),
-                ),
-                if (options.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text('Eklenen Seçenekler:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...options.map((option) => ListTile(
-                        title: Text(option),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            dialogSetState(() {
-                              options.remove(option);
-                            });
-                          },
-                        ),
-                      )),
-                ],
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (questionController.text.isNotEmpty && options.isNotEmpty) {
-                  setState(() {
-                    _questions.add(Question(
-                      question: questionController.text,
-                      options: options,
-                      type: 'multiple_choice',
-                      level: 10, // Sabit level değeri
-                    ));
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Ekle'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleAddForm(String fileId) async {
-    if (_formKey.currentState!.validate() && _questions.isNotEmpty) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        // Form verisini hazırla
-        final formData = {
-          'name': _nameController.text.trim(),
-          'description': _descriptionController.text.trim(),
-          'questions': _questions
-              .map((q) => {
-                    'question': q.question,
-                    'options': q.options,
-                    'type': q.type,
-                    'level': 10, // Sabit level değeri
-                  })
-              .toList(),
-          'type': _selectedFormType,
-          'file_id': fileId,
-          'level': 10, // Sabit level değeri
-        };
-
-        print('Form verisi: $formData'); // Debug için
-
-        final response = await _formService.addForm(formData);
-
-        if (response['status'] == 'success') {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content:
-                      Text(response['message'] ?? 'Form başarıyla eklendi')),
-            );
-            // Form alanlarını temizle
-            _nameController.clear();
-            _descriptionController.clear();
-            _questions = [];
-            // Dialog'u kapat
-            Navigator.pop(context);
-          }
-        } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(response['message'] ?? 'Form eklenemedi')),
-            );
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Form eklenirken hata oluştu: ${e.toString()}')),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-    } else if (_questions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen en az bir soru ekleyin')),
-      );
-    }
   }
 
   void _showFormDetails(FormModel form) {
@@ -510,14 +166,6 @@ class _DFilePageState extends State<DFilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        automaticallyImplyLeading: false,
-        title: const Text('Dosyalar'),
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _files.isEmpty
@@ -543,13 +191,13 @@ class _DFilePageState extends State<DFilePage> {
                                   trailing: IconButton(
                                     icon: const Icon(Icons.delete),
                                     onPressed: () async {
-                                      // Form silme işlemi
+                                      // Dosya silme işlemi
                                       final confirm = await showDialog<bool>(
                                         context: context,
                                         builder: (context) => AlertDialog(
-                                          title: const Text('Formu Sil'),
+                                          title: const Text('Dosyayı Sil'),
                                           content: const Text(
-                                              'Bu formu silmek istediğinizden emin misiniz?'),
+                                              'Bu dosyayı ve içindeki tüm formları silmek istediğinizden emin misiniz?'),
                                           actions: [
                                             TextButton(
                                               onPressed: () =>
@@ -573,8 +221,17 @@ class _DFilePageState extends State<DFilePage> {
                                         });
 
                                         try {
-                                          final response = await _formService
-                                              .deleteForm(form.id);
+                                          // Önce dosyaya ait formları sil
+                                          if (file.forms != null) {
+                                            for (var form in file.forms!) {
+                                              await _formService
+                                                  .deleteForm(form.id);
+                                            }
+                                          }
+
+                                          // Sonra dosyayı sil
+                                          final response = await _fileService
+                                              .deleteFile(file.id);
 
                                           if (response['status'] == 'success') {
                                             if (mounted) {
@@ -583,7 +240,7 @@ class _DFilePageState extends State<DFilePage> {
                                                 SnackBar(
                                                     content: Text(response[
                                                             'message'] ??
-                                                        'Form başarıyla silindi')),
+                                                        'Dosya başarıyla silindi')),
                                               );
                                               // Dosyaları yeniden yükle
                                               await _loadFiles();
@@ -593,9 +250,9 @@ class _DFilePageState extends State<DFilePage> {
                                               ScaffoldMessenger.of(context)
                                                   .showSnackBar(
                                                 SnackBar(
-                                                    content: Text(
-                                                        response['message'] ??
-                                                            'Form silinemedi')),
+                                                    content: Text(response[
+                                                            'message'] ??
+                                                        'Dosya silinemedi')),
                                               );
                                             }
                                           }
@@ -605,7 +262,7 @@ class _DFilePageState extends State<DFilePage> {
                                                 .showSnackBar(
                                               SnackBar(
                                                   content: Text(
-                                                      'Form silinirken hata oluştu: ${e.toString()}')),
+                                                      'Dosya silinirken hata oluştu: ${e.toString()}')),
                                             );
                                           }
                                         } finally {
@@ -734,6 +391,310 @@ class _DFilePageState extends State<DFilePage> {
         onPressed: _showAddFileDialog,
         child: const Icon(Icons.add),
         tooltip: 'Dosya Ekle',
+        heroTag: "add_file_fab",
+      ),
+    );
+  }
+}
+
+class _AddFilePage extends StatefulWidget {
+  final VoidCallback onFileAdded;
+
+  const _AddFilePage({
+    Key? key,
+    required this.onFileAdded,
+  }) : super(key: key);
+
+  @override
+  State<_AddFilePage> createState() => _AddFilePageState();
+}
+
+class _AddFilePageState extends State<_AddFilePage> {
+  final _formKey = GlobalKey<FormState>();
+  final _fileNameController = TextEditingController();
+  bool _isLoading = false;
+
+  // Services
+  late final DioClient _dioClient;
+  late final FileService _fileService;
+
+  @override
+  void initState() {
+    super.initState();
+    const storage = FlutterSecureStorage();
+    _dioClient = DioClient(storage: storage);
+    _fileService = FileService(dioClient: _dioClient, secureStorage: storage);
+  }
+
+  @override
+  void dispose() {
+    _fileNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleAddFile() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final formData = {
+          'name': _fileNameController.text.trim(),
+        };
+
+        final response = await _fileService.addFile(formData);
+
+        if (response['status'] == 'success') {
+          if (mounted) {
+            // Önce loading durumunu kapat
+            setState(() {
+              _isLoading = false;
+            });
+
+            // Başarı mesajını göster
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Dosya başarıyla oluşturuldu'),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+
+            // Dosya listesini güncelle
+            widget.onFileAdded();
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(response['message'] ?? 'Dosya oluşturulamadı'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Dosya oluşturulurken hata oluştu: ${e.toString()}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Yeni Dosya Oluştur'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              const Text(
+                'Dosya Bilgileri',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Yeni bir dosya oluşturmak için aşağıdaki bilgileri doldurun',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Form Card
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Icon and Title
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.create_new_folder,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Text(
+                              'Dosya Detayları',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // File Name Input
+                      TextFormField(
+                        controller: _fileNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Dosya Adı *',
+                          hintText: 'Örn: Hasta Kayıtları, Raporlar, vb.',
+                          prefixIcon: Icon(Icons.file_present),
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Lütfen dosya adını girin';
+                          }
+                          if (value.trim().length < 3) {
+                            return 'Dosya adı en az 3 karakter olmalıdır';
+                          }
+                          return null;
+                        },
+                        onChanged: (value) {
+                          setState(() {}); // UI'ı güncelle
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Info Card
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.blue[700],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Bu dosya oluşturulduktan sonra içerisine formlar ekleyebilirsiniz.',
+                                style: TextStyle(
+                                  color: Colors.blue[700],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'İptal',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleAddFile,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor:
+                            _fileNameController.text.trim().isNotEmpty
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey,
+                        foregroundColor:
+                            _fileNameController.text.trim().isNotEmpty
+                                ? Colors.white
+                                : Colors.grey[600],
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'Dosya Oluştur',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

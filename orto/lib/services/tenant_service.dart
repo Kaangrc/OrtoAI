@@ -16,7 +16,21 @@ class TenantService {
     try {
       final response =
           await dioClient.dio.post('/auth/tenant/register', data: data);
-      return response.data;
+
+      if (response.statusCode == 201) {
+        final respData = response.data;
+        return {
+          'status': 'success',
+          'message': respData['message'] ?? 'Kurum başarıyla oluşturuldu.',
+          'tenant': respData['tenant'],
+          'token': respData['token'],
+        };
+      }
+
+      return {
+        'status': 'error',
+        'message': response.data?['message'] ?? 'Kayıt başarısız.'
+      };
     } on DioException catch (e) {
       return _handleDioError(e);
     }
@@ -51,7 +65,8 @@ class TenantService {
 
   Future<Map<String, dynamic>?> getTenantInfo() async {
     try {
-      final token = await secureStorage.read(key: 'auth_token');
+      final token = await secureStorage.read(key: DioClient.tokenKey) ??
+          await secureStorage.read(key: 'auth_token');
       if (token == null) return null;
 
       final decodedToken = JwtDecoder.decode(token);
@@ -59,14 +74,15 @@ class TenantService {
 
       final response = await dioClient.dio.get('/tenants/$tenantId');
       return response.data;
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       return null;
     }
   }
 
   Future<List<dynamic>> getAllDoctorsForTenant() async {
     try {
-      final token = await secureStorage.read(key: 'auth_token');
+      final token = await secureStorage.read(key: DioClient.tokenKey) ??
+          await secureStorage.read(key: 'auth_token');
       if (token == null) {
         throw Exception('Token bulunamadı');
       }
@@ -96,7 +112,8 @@ class TenantService {
   Future<Map<String, dynamic>> updateTenant(
       Map<String, dynamic> updateData) async {
     try {
-      final token = await secureStorage.read(key: 'auth_token');
+      final token = await secureStorage.read(key: DioClient.tokenKey) ??
+          await secureStorage.read(key: 'auth_token');
       if (token == null) {
         return {'status': 'error', 'message': 'Oturum bulunamadı'};
       }
@@ -125,7 +142,8 @@ class TenantService {
 
   Future<bool> deleteTenant() async {
     try {
-      final token = await secureStorage.read(key: 'auth_token');
+      final token = await secureStorage.read(key: DioClient.tokenKey) ??
+          await secureStorage.read(key: 'auth_token');
       if (token == null) return false;
 
       final decodedToken = JwtDecoder.decode(token);
@@ -134,7 +152,7 @@ class TenantService {
       await dioClient.dio.delete('/tenants/$tenantId');
       await secureStorage.delete(key: 'auth_token');
       return true;
-    } on DioException catch (e) {
+    } on DioException catch (_) {
       return true;
     }
   }

@@ -159,7 +159,7 @@ class PatientService {
       String patientId, Map<String, dynamic> data) async {
     try {
       final response =
-          await _dioClient.dio.put('/patients/update/$patientId', data: data);
+          await _dioClient.dio.put('/patients/$patientId', data: data);
 
       if (response.statusCode == 200) {
         return {

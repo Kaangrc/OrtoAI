@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ortopedi_ai/services/mr_service.dart';
 import 'package:ortopedi_ai/utils/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:intl/intl.dart';
 
 class MRAnalizPage extends StatefulWidget {
   final String mrId;
@@ -24,7 +23,6 @@ class _MRAnalizPageState extends State<MRAnalizPage> {
   bool _isLoading = false;
   Set<String> _selectedSegmentTypes = {};
   Map<String, Map<String, dynamic>> _analysisResults = {};
-  Map<String, dynamic>? _mrData;
 
   @override
   void initState() {
@@ -49,7 +47,6 @@ class _MRAnalizPageState extends State<MRAnalizPage> {
       if (result['status'] == 'success') {
         setState(() {
           _analysisResults[segmentType] = result['data'];
-          _mrData = result['mr'];
         });
       } else {
         if (mounted) {
