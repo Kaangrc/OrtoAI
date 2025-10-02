@@ -62,7 +62,7 @@ class PromotionPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Ortopedi AI',
+                          'MedıSurvey AI',
                           style: Theme.of(context)
                               .textTheme
                               .headlineMedium
@@ -73,7 +73,7 @@ class PromotionPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Modern ve kullanıcı dostu ortopedi yönetim sistemi',
+                          'Modern ve kullanıcı dostu hasta yönetim sistemi',
                           textAlign: TextAlign.center,
                           style:
                               Theme.of(context).textTheme.bodyLarge?.copyWith(

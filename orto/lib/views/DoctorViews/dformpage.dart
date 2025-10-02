@@ -1486,14 +1486,19 @@ class _DFormPageState extends State<DFormPage> with TickerProviderStateMixin {
                                 Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            patient.primaryPhone,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
+                          Expanded(
+                            child: Text(
+                              patient.primaryPhone,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -1623,16 +1628,19 @@ class _QuestionEditBottomSheetState extends State<_QuestionEditBottomSheet> {
   }
 
   void _addOption() {
-    if (_optionController.text.trim().isNotEmpty) {
-      setState(() {
-        _options.add(OptionModel(
-          option: _optionController.text.trim(),
-          optionLevel: 5,
-        ));
-        _optionController.clear();
-      });
-      HapticFeedback.lightImpact();
-    }
+    final text = _optionController.text.trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _options.add(OptionModel(option: text, optionLevel: 5));
+      _optionController.text = '';
+    });
+    // Klavyede Enter sonrası focus korunup eski metin görünmesin diye
+    FocusScope.of(context).requestFocus(FocusNode());
+    Future.microtask(() {
+      // Tekrar inputa odaklanıp temiz bir alan ver
+      FocusScope.of(context).requestFocus(FocusNode());
+    });
+    HapticFeedback.lightImpact();
   }
 
   void _removeOption(int index) {
@@ -1880,6 +1888,7 @@ class _QuestionEditBottomSheetState extends State<_QuestionEditBottomSheet> {
                         const SizedBox(width: 12),
                         FloatingActionButton.small(
                           onPressed: _addOption,
+                          tooltip: 'Seçenek ekle',
                           child: const Icon(Icons.add),
                         ),
                       ],

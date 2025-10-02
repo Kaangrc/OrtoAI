@@ -1,5 +1,3 @@
-import 'dart:convert' show base64Url, utf8, json;
-
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -94,6 +92,23 @@ class DoctorService {
       Map<String, dynamic> data) async {
     try {
       // API'nin beklediği formata dönüştür
+      // Not: Tenant kimliği ve Authorization için en güncel tenant token'ını
+      // `DioClient.tokenKey` üzerinden okuyoruz.
+      final String? tenantToken =
+          await _storage.read(key: DioClient.tokenKey) ??
+              await _storage.read(key: 'auth_token');
+      if (tenantToken == null || JwtDecoder.isExpired(tenantToken)) {
+        return {
+          'status': 'error',
+          'error': 'Geçerli oturum bulunamadı veya token süresi dolmuş'
+        };
+      }
+
+      // Global client token'ını değiştirmeden yalnızca bu istekte tenant token kullan
+      final perRequestOptions = Options(headers: {
+        'Authorization': 'Bearer $tenantToken',
+      });
+
       final formattedData = {
         'name': data['name'],
         'surname': data['surname'],
@@ -108,8 +123,11 @@ class DoctorService {
 
       print('Gönderilen veri: $formattedData'); // Debug için
 
-      final response = await _dioClient.dio
-          .post('/auth/tenant/register-doctor', data: formattedData);
+      final response = await _dioClient.dio.post(
+        '/auth/tenant/register-doctor',
+        data: formattedData,
+        options: perRequestOptions,
+      );
 
       print('API Yanıtı: ${response.data}'); // Debug için
 
@@ -136,7 +154,9 @@ class DoctorService {
   }
 
   Future<String> _getTenantId() async {
-    final token = await _storage.read(key: 'auth_token');
+    // Tercihen tenant token'ını kullan
+    final token = await _storage.read(key: DioClient.tokenKey) ??
+        await _storage.read(key: 'auth_token');
     if (token == null) {
       throw Exception('Token bulunamadı');
     }

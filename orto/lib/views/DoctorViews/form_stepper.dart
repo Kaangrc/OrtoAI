@@ -34,6 +34,74 @@ class _FormStepperState extends State<FormStepper> {
   String _selectedRepetitionTime = '-';
   List<Question> _questions = [];
 
+  // Çoktan seçmeli soru için satırdaki "Seçenek ekle" inputunu yönetmek üzere
+  // her soru index'i için bir controller tutuyoruz
+  final Map<int, TextEditingController> _optionInputControllers = {};
+
+  TextEditingController _getOptionInputController(int questionIndex) {
+    return _optionInputControllers.putIfAbsent(
+        questionIndex, () => TextEditingController());
+  }
+
+  // Görsel olarak daha zengin "Soru Ekle" kart butonu
+  Widget _buildAddQuestionButton({
+    required Color color,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Ink(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.25)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: color.withOpacity(0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.add_circle, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Services
   late final DioClient _dioClient;
   late final FormService _formService;
@@ -50,6 +118,10 @@ class _FormStepperState extends State<FormStepper> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    // Dinamik oluşturulan tüm option input controller'larını kapat
+    for (final c in _optionInputControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -443,24 +515,22 @@ class _FormStepperState extends State<FormStepper> {
         Row(
           children: [
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _addTextQuestion(),
-                icon: const Icon(Icons.text_fields),
-                label: const Text('Metin Sorusu'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+              child: _buildAddQuestionButton(
+                color: Theme.of(context).colorScheme.primary,
+                icon: Icons.text_fields,
+                title: 'Metin Sorusu',
+                subtitle: 'Serbest yanıt',
+                onTap: _addTextQuestion,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _addMultipleChoiceQuestion(),
-                icon: const Icon(Icons.check_box),
-                label: const Text('Çoktan Seçmeli'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+              child: _buildAddQuestionButton(
+                color: Theme.of(context).colorScheme.secondary,
+                icon: Icons.check_box,
+                title: 'Çoktan Seçmeli',
+                subtitle: 'Seçeneklerden biri',
+                onTap: _addMultipleChoiceQuestion,
               ),
             ),
           ],
@@ -602,15 +672,24 @@ class _FormStepperState extends State<FormStepper> {
             ),
           ),
         ),
-        title: Text(
-          question.question.isEmpty
-              ? 'Yeni ${question.type == 'text' ? 'Metin' : 'Çoktan Seçmeli'} Sorusu'
-              : question.question,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color:
-                question.question.isEmpty ? Colors.grey[600] : Colors.black87,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                question.question.isEmpty
+                    ? 'Yeni ${question.type == 'text' ? 'Metin' : 'Çoktan Seçmeli'} Sorusu'
+                    : question.question,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: question.question.isEmpty
+                      ? Colors.grey[600]
+                      : Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.help_outline, size: 18, color: Colors.grey),
+          ],
         ),
         subtitle: question.type == 'multiple_choice' &&
                 question.options != null &&
@@ -628,6 +707,8 @@ class _FormStepperState extends State<FormStepper> {
                 HapticFeedback.lightImpact();
                 setState(() {
                   _questions.removeAt(index);
+                  // İlgili input controller'ını da temizle
+                  _optionInputControllers.remove(index)?.dispose();
                 });
               },
             ),
@@ -669,22 +750,7 @@ class _FormStepperState extends State<FormStepper> {
             });
           },
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            const Icon(Icons.text_fields, color: Colors.blue),
-            const SizedBox(width: 8),
-            const Text('Metin Sorusu'),
-            const Spacer(),
-            Switch(
-              value: true, // Zorunlu soru (şimdilik her zaman true)
-              onChanged: (value) {
-                // Zorunlu soru özelliği için gelecekte kullanılabilir
-              },
-            ),
-            const Text('Zorunlu'),
-          ],
-        ),
+        // Zorunlu/tik alanlarını kaldırdık; arayüz sadeleştirildi
       ],
     );
   }
@@ -692,6 +758,8 @@ class _FormStepperState extends State<FormStepper> {
   // Çoktan seçmeli soru editörü
   Widget _buildMultipleChoiceQuestionEditor(int index, Question question) {
     List<OptionModel> options = List.from(question.options ?? []);
+    final TextEditingController optionController =
+        _getOptionInputController(index);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,6 +792,7 @@ class _FormStepperState extends State<FormStepper> {
             Expanded(
               child: TextFormField(
                 key: ValueKey('option_$index'),
+                controller: optionController,
                 decoration: const InputDecoration(
                   labelText: 'Seçenek ekle',
                   prefixIcon: Icon(Icons.add_circle_outline),
@@ -746,6 +815,8 @@ class _FormStepperState extends State<FormStepper> {
                         level: 10,
                       );
                     });
+                    // Input'u temizle ve odaklanmayı koru
+                    optionController.clear();
                   }
                 },
               ),
@@ -753,8 +824,21 @@ class _FormStepperState extends State<FormStepper> {
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: () {
-                // Bu buton şimdilik sadece görsel amaçlı
-                // Seçenek ekleme sadece Enter tuşu ile yapılıyor
+                final text = optionController.text.trim();
+                if (text.isEmpty) return;
+                HapticFeedback.lightImpact();
+                setState(() {
+                  options.add(OptionModel(option: text, optionLevel: 5));
+                  _questions[index] = Question(
+                    question: _questions[index].question,
+                    options: options,
+                    type: 'multiple_choice',
+                    level: 10,
+                  );
+                });
+                optionController.clear();
+                // Tekrar inputa odaklan
+                FocusScope.of(context).requestFocus(FocusNode());
               },
               child: const Icon(Icons.add),
             ),
@@ -776,22 +860,7 @@ class _FormStepperState extends State<FormStepper> {
           }),
         ],
 
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            const Icon(Icons.check_box, color: Colors.green),
-            const SizedBox(width: 8),
-            const Text('Çoktan Seçmeli Soru'),
-            const Spacer(),
-            Switch(
-              value: true, // Zorunlu soru (şimdilik her zaman true)
-              onChanged: (value) {
-                // Zorunlu soru özelliği için gelecekte kullanılabilir
-              },
-            ),
-            const Text('Zorunlu'),
-          ],
-        ),
+        // Alt bilgi/"Çoktan Seçmeli Soru" ve "Zorunlu" kaldırıldı
       ],
     );
   }

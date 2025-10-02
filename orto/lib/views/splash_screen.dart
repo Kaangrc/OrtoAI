@@ -131,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     children: [
                       Text(
-                        'OrtoAI',
+                        'MedıSurvey AI',
                         style:
                             Theme.of(context).textTheme.displayMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
@@ -140,7 +140,7 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Modern Ortopedi Yönetimi',
+                        'Modern Hasta Yönetimi',
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: Theme.of(context)

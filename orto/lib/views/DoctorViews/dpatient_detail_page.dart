@@ -155,7 +155,11 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
       }
 
       if (response['status'] == 'success') {
-        await _loadPatientFiles();
+        // UI'yi anında güncelle: yeni fileIds'e göre listeyi yeniden oluştur
+        setState(() {
+          _patientFiles =
+              _allFiles.where((file) => newFileIds.contains(file.id)).toList();
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -773,11 +777,14 @@ class _PatientDetailPageState extends State<PatientDetailPage> {
                                                                 .push(
                                                           context,
                                                           MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                FormFillStepper(
-                                                              formId: form.id,
-                                                              patientId: widget
-                                                                  .patient.id,
+                                                            builder:
+                                                                (context) =>
+                                                                    FormStepper(
+                                                              fileId: file.id,
+                                                              onFormAdded: () {
+                                                                // Form oluşturulduğunda dosya formlarını tazelemek için dosyaları yeniden yükle
+                                                                _loadPatientFiles();
+                                                              },
                                                             ),
                                                           ),
                                                         );

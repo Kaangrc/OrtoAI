@@ -32,8 +32,11 @@ class DioClient {
           options.headers.remove('Authorization');
           print('ℹ️ Authorization header removed for auth route');
         } else if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-          print('🔐 Authorization header added: Bearer $token');
+          // Eğer istek zaten Authorization içeriyorsa, üzerine yazma
+          if (!options.headers.containsKey('Authorization')) {
+            options.headers['Authorization'] = 'Bearer $token';
+            print('🔐 Authorization header added: Bearer $token');
+          }
         }
 
         print('📝 HEADERS: ${options.headers}');

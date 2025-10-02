@@ -81,15 +81,31 @@ class TenantService {
 
   Future<List<dynamic>> getAllDoctorsForTenant() async {
     try {
-      final token = await secureStorage.read(key: DioClient.tokenKey) ??
-          await secureStorage.read(key: 'auth_token');
-      if (token == null) {
-        throw Exception('Token bulunamadı');
+      Future<Response> _requestWithToken(String token) {
+        return dioClient.dio.get(
+          '/doctors/tenant/all',
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
       }
 
-      dioClient.setToken(token); // Header'a token'ı ekle
+      String? token = await secureStorage.read(key: DioClient.tokenKey) ??
+          await secureStorage.read(key: 'auth_token');
+      if (token == null) throw Exception('Token bulunamadı');
 
-      final response = await dioClient.dio.get('/doctors/tenant/all');
+      Response response = await _requestWithToken(token);
+
+      // Eğer ilk denemede yetki/expiry sorunu varsa, token'ı tekrar okuyup bir kez daha dene
+      if ((response.statusCode == 401 || response.statusCode == 403) ||
+          (response.data is Map &&
+              (response.data['details'] == 'jwt expired' ||
+                  response.data['error'] == 'Geçersiz token.'))) {
+        final refreshed = await secureStorage.read(key: DioClient.tokenKey) ??
+            await secureStorage.read(key: 'auth_token');
+        if (refreshed != null && refreshed != token) {
+          token = refreshed;
+          response = await _requestWithToken(token);
+        }
+      }
 
       if (response.statusCode == 200) {
         final data = response.data;
